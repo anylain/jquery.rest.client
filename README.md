@@ -13,7 +13,7 @@
 
 快速开始
 ----------------
-    ```javascript
+```javascript
     //修改默认设置
     $.rest.updateOptions({
         baseUrl:'http://localhost:8080/rest/',
