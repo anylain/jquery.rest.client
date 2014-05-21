@@ -23,7 +23,7 @@
     });
         
     // 发送一个GET请求到 http://localhost:8080/rest/my_resources/100
-    // 请求时 url 中的id 会自动被data中的同名属性替换掉
+    // 请求时 url 中的占位符 {id} 会自动被 urlParams 中的同名属性替换掉
     $.rest.get({
         url: 'my_resources/{id}',
         urlParams: {id:100},
