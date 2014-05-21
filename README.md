@@ -26,7 +26,7 @@
     // 请求时 url 中的id 会自动被data中的同名属性替换掉
     $.rest.get({
         url: 'my_resources/{id}',
-        data: {id:100},
+        urlParams: {id:100},
         success: function(data){
             alert(data.name);
         }
