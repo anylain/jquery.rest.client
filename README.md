@@ -14,8 +14,8 @@
 快速开始
 ----------------
 ```html
-<script src="http://code.jquery.com/jquery-1.11.0.js"></script>
-<script src="../src/jquery.rest.js"></script>
+<script src="jquery.js"></script>
+<script src="jquery.rest.js"></script>
 <script>
     //修改默认设置
     $.rest.updateOptions({
