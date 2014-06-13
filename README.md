@@ -34,6 +34,6 @@
             success: function(data){
                 alert(data.name);
             }
-    });
+        });
     });
 </script>
