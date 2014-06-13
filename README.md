@@ -13,7 +13,10 @@
 
 快速开始
 ----------------
-```javascript
+```html
+<script src="http://code.jquery.com/jquery-1.11.0.js"></script>
+<script src="../src/jquery.rest.js"></script>
+<script>
     //修改默认设置
     $.rest.updateOptions({
         baseUrl:'http://localhost:8080/rest/',
@@ -21,13 +24,16 @@
             alert(errMessage);
         }
     });
-        
-    // 发送一个GET请求到 http://localhost:8080/rest/my_resources/100
-    // 请求时 url 中的占位符 {id} 会自动被 urlParams 中的同名属性替换掉
-    $.rest.get({
-        url: 'my_resources/{id}',
-        urlParams: {id:100},
-        success: function(data){
-            alert(data.name);
-        }
+    
+    $(function(){
+        // 发送一个GET请求到 http://localhost:8080/rest/my_resources/100
+        // 请求时 url 中的占位符 {id} 会自动被 urlParams 中的同名属性替换掉
+        $.rest.get({
+            url: 'my_resources/{id}',
+            urlParams: {id:100},
+            success: function(data){
+                alert(data.name);
+            }
     });
+    });
+</script>
