@@ -46,9 +46,27 @@ QUnit.test("Init Options Test", function( assert ) {
 });
 
 QUnit.test("Request Build Test", function( assert ) {
-    var rc = new $.RestClient();
-    assert.equal(rc._buildRequest({}), rc.getOptions(), "Result is equal options when request param is empty object.");
-    assert.throws(function() { rc._buildRequest(); }, "When request param is null will throw exception.");
+	var rc = new $.RestClient();
+	var request = {
+		data : {
+			"array" : [ 1, 2, 3, 4 ],
+			"obj" : {
+				a : "apple",
+				b : "banana"
+			}
+		}
+	};
+	assert.equal(rc._buildRequest(request).data, 
+			rc.getOptions().serializeRequestBody(request),
+			"Auto serialize request body");
+	assert.equal(rc._buildRequest({data: null}).data, "null",
+		"Not Skip serialize when body is null");
+	assert.equal(rc._buildRequest({data: {}}).data, "{}",
+		"Not Skip serialize when body is {}");
+	assert.equal(rc._buildRequest({data: 0}).data, "0",
+		"Not Skip serialize when body is 0");
+	assert.equal(rc._buildRequest({data: ""}).data, '""',
+		'Not Skip serialize when body is empty string');
 });
 
 QUnit.test("Update Options Test", function( assert ) {
