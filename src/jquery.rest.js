@@ -32,7 +32,7 @@
 			var result;
 			if (target === undefined) {
 				result = data;
-			} else if (target !== null && typeof (target) == 'object') {
+			} else if (target !== null && $.type(target) == 'object') {
 				result = {};
 				for ( var key in target) {
 					result[key] = target[key];
