@@ -28,23 +28,23 @@
 			return result;
 		};
 
-		this._updateOptions = function(target, data, force) {
+		this._updateOptions = function(source, newValue, force) {
 			var result;
-			if (target === undefined) {
-				result = data;
-			} else if (target !== null && $.type(target) == 'object') {
+			if (source === undefined) {
+				result = newValue;
+			} else if (source !== null && $.type(source) == 'object') {
 				result = {};
-				for ( var key in target) {
-					result[key] = target[key];
+				for ( var key in source) {
+					result[key] = source[key];
 				}
-				for ( var key in data) {
-					result[key] = this._updateOptions(target[key], data[key],
+				for ( var key in newValue) {
+					result[key] = this._updateOptions(source[key], newValue[key],
 							force);
 				}
 			} else if (force) {
-				result = data;
+				result = newValue;
 			} else {
-				result = target;
+				result = source;
 			}
 			return result;
 		};
