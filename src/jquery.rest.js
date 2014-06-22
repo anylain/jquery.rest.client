@@ -154,7 +154,7 @@
 
 		this.buildUrl = function(sourceUrl, params, ext) {
 			if (!params)
-				return sourceUrl;
+				return sourceUrl + (ext || '');
 
 			var urlParams = [];
 			var result = _gsub(sourceUrl, /\{(.+?)\}/, function(match) {
