@@ -49,6 +49,8 @@ QUnit.test("Request Build Test", function( assert ) {
 	var rc = new $.RestClient();
 	var request = {
 		data : {
+	    	"number" : 123.321,
+	    	"str" : "some string",
 			"array" : [ 1, 2, 3, 4 ],
 			"obj" : {
 				a : "apple",
@@ -56,6 +58,7 @@ QUnit.test("Request Build Test", function( assert ) {
 			}
 		}
 	};
+	
 	assert.equal(rc._buildRequest(request).data, 
 			rc.getOptions().serializeRequestBody(request),
 			"Auto serialize request body");
@@ -67,14 +70,108 @@ QUnit.test("Request Build Test", function( assert ) {
 		"Not Skip serialize when body is 0");
 	assert.equal(rc._buildRequest({data: ""}).data, '""',
 		'Not Skip serialize when body is empty string');
+
+	assert.ok(rc._buildRequest().success, "Request has success callback function");
+	assert.ok(rc._buildRequest().error, "Request has error callback function");
+
+	// Addon Test
+	var addon = {
+		headers: {
+			'accept': 'image/png',
+			'X-SomeKey': 'lalala'
+		},
+		data: {
+			'array' : [ 1, 2, 3],
+			'addon' : 123
+		}
+	};
+	rc.updateOptions({serializeRequestBody:function(request){return request.data;}});
+
+	assert.deepEqual(rc._buildRequest(request, addon).data['array'], [1,2,3], "Addon replace Array");
+	assert.equal(rc._buildRequest(request, addon).data['addon'], 123, "Addon add property");
+	assert.equal(rc._buildRequest(request, addon).headers['X-SomeKey'], 'lalala', "Addon add header");
+	assert.ok(
+			rc.getOptions().headers['accept'] != 'image/png'
+			&& rc._buildRequest(request, addon).headers['accept'] == 'image/png', 
+			"Addon replace header");
 });
 
 QUnit.test("Update Options Test", function( assert ) {
     var rc = new $.RestClient();
-    // TODO
+    var source = {
+    	"number" : 123.321,
+    	"str" : "some string",
+		"array" : [ 1, 2, 3, 4 ],
+		"obj" : {
+			a : "apple",
+			b : "banana"
+		}
+	};
+    
+    var newValue = {
+    	"str" : "new string",
+    	"array" : [ 'alpha', 'beta' ],
+    	"obj" : {
+    		b : "blue",
+    		c : "cat"
+    	}
+    };
+    
+    var forceResult = {
+    	"number" : 123.321,
+    	"str" : "new string",
+    	"array" : [ 'alpha', 'beta' ],
+		"obj" : {
+			a : "apple",
+    		b : "blue",
+    		c : "cat"
+		}
+    };
+    
+    var noForceResult = {
+    	"number" : 123.321,
+    	"str" : "some string",
+		"array" : [ 1, 2, 3, 4 ],
+		"obj" : {
+			a : "apple",
+			b : "banana",
+	    	c : "cat"
+		}
+    };
+    
+    assert.notEqual(rc._updateOptions(source, {}, true), source, "Create a new object for result");
+    assert.deepEqual(rc._updateOptions(source, newValue, true), forceResult, "Update options by force (use new value with conflict)");
+    assert.deepEqual(rc._updateOptions(source, newValue, false), noForceResult, "Update options by no force (use source value with conflict)");
 });
 
 QUnit.test("Compatible Test", function( assert ) {
     var rc = new $.RestClient();
-    // TODO
+    var request;
+    
+    var methods = ['GET','POST','PUT','DELETE'];
+    $(methods).each(function(index, method){
+        request = {
+            	compatible : 'x-method'
+            };
+            rc._compatibleHandler(method, request);
+            assert.equal(request.type, 'POST', "(Method=" + method + ") In 'x-method' model, request method will be replaced by 'POST'");
+            assert.equal(request.headers['x-method-override'], method, "(Method=" + method + ") In 'x-method' model, the real method will write in http header 'x-method-override'");
+            
+            request = {
+            	compatible : 'url'
+            };
+            rc._compatibleHandler(method, request);
+            assert.equal(request.type, 'POST', "(Method=" + method + ") In 'url' model, request method will be replaced by 'POST'");
+            assert.equal(request.urlParams['__method'], method, "(Method=" + method + ") In 'url' model, the real method will write in url query parameter '__method'");
+            
+            var called = false;
+            request = {
+            	compatible : function(mth, req){
+            		if(mth == method && request===req)
+            			called=true;
+            	}
+            };
+            rc._compatibleHandler(method, request);
+            assert.ok(called, "(Method=" + method + ") When compatible is function, they will be call to build request");
+    });
 });
