@@ -10,24 +10,39 @@ QUnit.test("Default Instance Test", function( assert ) {
 
 QUnit.test("URL Build Test", function( assert ) {
     var rc = new $.RestClient();
-    
+
     var url = rc.buildUrl('users/{id}', {id:123});
     var good = 'users/123';
-    assert.equal( url, good, "Simple" );
+    assert.equal( url, good, "Simple url params" );
     
-    var url = rc.buildUrl('users/{id}', {id:123}, '.xml');
-    var good = 'users/123.xml';
+    var url = rc.buildUrl('users/{id}', null, {id:123});
+    var good = 'users/123';
+    assert.equal( url, good, "Simple path params" );
+    
+    var url = rc.buildUrl('users', null, null, {id:123});
+    var good = 'users?id=123';
+    assert.equal( url, good, "Simple query params" );
+    
+    var url = rc.buildUrl('users/{id}', {id:456}, {id:123});
+    var good = 'users/123';
+    assert.equal( url, good, "Path params priority than the url params" );
+    
+    var url = rc.buildUrl('users', {id:456}, null, {id:123});
+    var good = 'users?id=123';
+    assert.equal( url, good, "Query params priority than the url params" );
+    
+    var url = rc.buildUrl('users/{id}/book/{book}', {id:123}, {book:"rest_client"}, {key:"javascript"}, '.pdf');
+    var good = 'users/123/book/rest_client.pdf?key=javascript';
     assert.equal( url, good, "Simple (Has ext)" );
     
-    var url = rc.buildUrl('users/{id}', null);
-    var good = 'users/{id}';
-    assert.equal( url, good, "null param" );
+    try{
+    	rc.buildUrl('users/{id}', null);
+    	assert.ok(false, "Throw an exception on can't found params.")
+    }catch (e) {
+    	assert.ok(true, "Throw an exception on can't found params.")
+	}
     
-    var url = rc.buildUrl('users/{id}', null, '.xml');
-    var good = 'users/{id}.xml';
-    assert.equal( url, good, "null param (has ext)" );
-    
-    var url = rc.buildUrl('users/{id}/books/{book}', {id:123, book:'Spring实战(第三版)', page:12, keyword:'http://spring.io/'}, '.json');
+    var url = rc.buildUrl('users/{id}/books/{book}', {id:123, book:'Spring实战(第三版)', page:12, keyword:'http://spring.io/'}, null, null, '.json');
     var good = 'users/123/books/Spring%E5%AE%9E%E6%88%98(%E7%AC%AC%E4%B8%89%E7%89%88).json?page=12&keyword=http%3A%2F%2Fspring.io%2F';
     assert.equal( url, good, "Param encoding" );
 });
@@ -46,54 +61,33 @@ QUnit.test("Init Options Test", function( assert ) {
 });
 
 QUnit.test("Request Build Test", function( assert ) {
-	var rc = new $.RestClient();
-	var request = {
-		data : {
-	    	"number" : 123.321,
-	    	"str" : "some string",
-			"array" : [ 1, 2, 3, 4 ],
-			"obj" : {
-				a : "apple",
-				b : "banana"
-			}
-		}
-	};
 	
-	assert.equal(rc._buildRequest(request).data, 
-			rc.getOptions().serializeRequestBody(request),
-			"Auto serialize request body");
-	assert.equal(rc._buildRequest({data: null}).data, "null",
-		"Not Skip serialize when body is null");
-	assert.equal(rc._buildRequest({data: {}}).data, "{}",
-		"Not Skip serialize when body is {}");
-	assert.equal(rc._buildRequest({data: 0}).data, "0",
-		"Not Skip serialize when body is 0");
-	assert.equal(rc._buildRequest({data: ""}).data, '""',
-		'Not Skip serialize when body is empty string');
+    var methods = ['GET','POST','PUT','DELETE'];
+    $(methods).each(function(index, method){
 
-	assert.ok(rc._buildRequest().success, "Request has success callback function");
-	assert.ok(rc._buildRequest().error, "Request has error callback function");
+    	var rc = new $.RestClient().updateOptions({
+    		error: function(message, jqXHR, textStatus, errorThrown) {
+    			if(errorThrown) throw new Error(errorThrown);
+    			else throw new Error(message);
+    		}
+    	});
+    	
+    	var serializeRequestBodyCalled = false;
+    	var compatibleCalled = false;
+    	var request = rc.buildRequest(method, {
+    		serializeRequestBody: function(){
+    			serializeRequestBodyCalled = true;
+    		},
+    		compatible: function(mth, req) {
+    			compatibleCalled = true;
+    		}
+    	});
+    	assert.ok(serializeRequestBodyCalled, "(Method=" + method + ") Auto serialize request body");
+    	assert.ok(compatibleCalled, "(Method=" + method + ") Call compatible function");
 
-	// Addon Test
-	var addon = {
-		headers: {
-			'accept': 'image/png',
-			'X-SomeKey': 'lalala'
-		},
-		data: {
-			'array' : [ 1, 2, 3],
-			'addon' : 123
-		}
-	};
-	rc.updateOptions({serializeRequestBody:function(request){return request.data;}});
-
-	assert.deepEqual(rc._buildRequest(request, addon).data['array'], [1,2,3], "Addon replace Array");
-	assert.equal(rc._buildRequest(request, addon).data['addon'], 123, "Addon add property");
-	assert.equal(rc._buildRequest(request, addon).headers['X-SomeKey'], 'lalala', "Addon add header");
-	assert.ok(
-			rc.getOptions().headers['accept'] != 'image/png'
-			&& rc._buildRequest(request, addon).headers['accept'] == 'image/png', 
-			"Addon replace header");
+		assert.ok(request.success, "(Method=" + method + ") Request has success callback function");
+		assert.ok(request.error, "(Method=" + method + ") Request has error callback function");
+    });
 });
 
 QUnit.test("Update Options Test", function( assert ) {

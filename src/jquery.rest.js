@@ -7,7 +7,7 @@
 
 	$.RestClient = function(options) {
 
-		var version = '1.1';
+		var version = '1.2';
 		var currOptions = null;
 
 		this.getVersion = function() {
@@ -28,6 +28,10 @@
 			return result;
 		};
 
+		this._clone = function(obj) {
+			return $.extend(true, {}, obj);
+		}
+
 		this._updateOptions = function(source, newValue, force) {
 			var result;
 			if (source === undefined) {
@@ -38,72 +42,14 @@
 					result[key] = source[key];
 				}
 				for ( var key in newValue) {
-					result[key] = this._updateOptions(source[key], newValue[key],
-							force);
+					result[key] = this._updateOptions(source[key],
+							newValue[key], force);
 				}
 			} else if (force) {
 				result = newValue;
 			} else {
 				result = source;
 			}
-			return result;
-		};
-
-		this._buildRequest = function(request, addon) {
-			var result = {};
-
-			for ( var key in request) {
-				result[key] = request[key];
-			}
-
-			if (addon)
-				result = this._updateOptions(result, addon, true);
-
-			result = this._updateOptions(result, currOptions);
-
-			var successHandler = result.success;
-			var errorHandler = result.error;
-
-			if (result.serializeRequestBody) {
-				try {
-					result.data = result.serializeRequestBody(result);
-				} catch (e) {
-					if (errorHandler)
-						errorHandler('Serialize request body fault.\n'
-								+ e.message);
-					if (result.complete)
-						result.complete();
-					return false;
-				}
-			}
-
-			result.success = function(data, textStatus, jqXHR) {
-				if (result.deserializeResponseBody) {
-					try {
-						data = result.deserializeResponseBody(data, result);
-					} catch (e) {
-						if (errorHandler)
-							errorHandler('Deserialize response body fault.',
-									jqXHR, textStatus, e.message);
-						return;
-					}
-				}
-				if (successHandler)
-					successHandler(data, textStatus, jqXHR);
-			};
-
-			result.error = function(jqXHR, textStatus, errorThrown) {
-				var message;
-				if (result.deserializeError)
-					message = result.deserializeError(jqXHR, textStatus,
-							errorThrown, result);
-				else
-					message = jqXHR.responseText || errorThrown || textStatus;
-
-				if (errorHandler)
-					errorHandler(message, jqXHR, textStatus, errorThrown);
-			};
-
 			return result;
 		};
 
@@ -152,33 +98,35 @@
 			return currOptions;
 		};
 
-		this.buildUrl = function(sourceUrl, params, ext) {
-			if (!params)
-				return sourceUrl + (ext || '');
-
-			var urlParams = [];
-			var result = _gsub(sourceUrl, /\{(.+?)\}/, function(match) {
-				var key = match[1];
-				var value = params[key];
-				if (value === undefined) {
-					return match[0];
-				} else if (value === null) {
-					value = '';
-				}
-				urlParams.push(key);
-				return encodeURIComponent(value);
-			});
+		this.buildUrl = function(sourceUrl, urlParams, pathParams, queryParams,
+				ext) {
+			pathParams = $.extend(true, {}, urlParams, pathParams);
+			var usedPathParams = [];
+			var result = !sourceUrl ? "" : _gsub(sourceUrl, /\{(.+?)\}/,
+					function(match) {
+						var key = match[1];
+						var value = pathParams[key];
+						if (value === undefined || value === null) {
+							$.error("Can't found '" + key
+									+ "' from pathParams or urlParams.");
+						}
+						usedPathParams.push(key);
+						return encodeURIComponent(value);
+					});
 
 			if (ext)
 				result += ext;
 
-			var searchParams = {};
-			$.each(params, function(key, value) {
-				if ($.inArray(key, urlParams) == -1) {
-					searchParams[key] = value;
-				}
-			});
-			var queryString = this.buildQueryString(searchParams);
+			queryParams = queryParams ? this._clone(queryParams) : {};
+			if (urlParams) {
+				$.each(urlParams, function(key, value) {
+					if ($.inArray(key, usedPathParams) == -1
+							&& queryParams[key] === undefined) {
+						queryParams[key] = value;
+					}
+				});
+			}
+			var queryString = this.buildQueryString(queryParams);
 			if (queryString)
 				result += '?' + queryString;
 
@@ -197,16 +145,84 @@
 			 */
 		};
 
+		this.buildRequest = function(method, request, addon) {
+			var result = {};
+
+			result = this._clone(request);
+
+			if (addon)
+				result = this._updateOptions(result, addon, true);
+
+			result = this._updateOptions(result, currOptions);
+
+			var successHandler = result.success;
+			var errorHandler = result.error;
+
+			if (result.serializeRequestBody) {
+				try {
+					result.data = result.serializeRequestBody(result);
+				} catch (e) {
+					$.error('Serialize request body fault. ' + e.message);
+				}
+			}
+
+			result.success = function(data, textStatus, jqXHR) {
+				if (result.deserializeResponseBody) {
+					try {
+						data = result.deserializeResponseBody(data, result);
+					} catch (e) {
+						$
+								.error('Deserialize response body fault. '
+										+ e.message);
+					}
+				}
+				if (successHandler)
+					successHandler(data, textStatus, jqXHR);
+			};
+
+			result.error = function(jqXHR, textStatus, errorThrown) {
+				var message;
+				if (result.deserializeError)
+					message = result.deserializeError(jqXHR, textStatus,
+							errorThrown, result);
+				else
+					message = (jqXHR && jqXHR.responseText) || errorThrown
+							|| textStatus;
+
+				if (errorHandler)
+					errorHandler(message, jqXHR, textStatus, errorThrown);
+			};
+
+			result.url = this.buildUrl(result.url, result.urlParams,
+					result.pathParams, result.queryParams, result.ext);
+			if (result.baseUrl)
+				result.url = result.baseUrl + result.url;
+
+			this._compatibleHandler(method, result);
+
+			return result;
+		};
+
 		this.sendRequest = function(method, request, addon) {
-			var r = this._buildRequest(request, addon);
-
-			this._compatibleHandler(method, r);
-
-			r.url = this.buildUrl(r.url, r.urlParams, r.ext);
-			if (r.baseUrl)
-				r.url = r.baseUrl + r.url;
-
-			return $.ajax(r);
+			try {
+				var r = this.buildRequest(method, request, addon);
+				return $.ajax(r);
+			} catch (e) {
+				var tryCallComplete = function() {
+					var completeHandler = (request && request.complete)
+							|| this.getOptions().complete;
+					if (completeHandler)
+						completeHandler();
+				};
+				var errorHandler = (request && request.error)
+						|| this.getOptions().error;
+				if (errorHandler) {
+					errorHandler(e.message, null, null, e);
+					tryCallComplete();
+				} else {
+					$.error(e.message);
+				}
+			}
 		};
 
 		this.get = function(request, addon) {
