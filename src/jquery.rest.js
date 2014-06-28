@@ -9,6 +9,7 @@
 
 		var version = '1.2';
 		var currOptions = null;
+		var _this = this;
 
 		this.getVersion = function() {
 			return version;
@@ -204,18 +205,21 @@
 		};
 
 		this.sendRequest = function(method, request, addon) {
+
 			try {
 				var r = this.buildRequest(method, request, addon);
 				return $.ajax(r);
 			} catch (e) {
 				var tryCallComplete = function() {
-					var completeHandler = (request && request.complete)
-							|| this.getOptions().complete;
+					var completeHandler = (addon && addon.complete)
+							|| (request && request.complete)
+							|| _this.getOptions().complete;
 					if (completeHandler)
 						completeHandler();
 				};
-				var errorHandler = (request && request.error)
-						|| this.getOptions().error;
+				var errorHandler = (addon && addon.error)
+						|| (request && request.error)
+						|| _this.getOptions().error;
 				if (errorHandler) {
 					errorHandler(e.message, null, null, e);
 					tryCallComplete();

@@ -31,9 +31,9 @@ QUnit.test("URL Build Test", function( assert ) {
     var good = 'users?id=123';
     assert.equal( url, good, "Query params priority than the url params" );
     
-    var url = rc.buildUrl('users/{id}/book/{book}', {id:123}, {book:"rest_client"}, {key:"javascript"}, '.pdf');
-    var good = 'users/123/book/rest_client.pdf?key=javascript';
-    assert.equal( url, good, "Simple (Has ext)" );
+    var url = rc.buildUrl('users/{id}/book/{book}', {id:123, key:"python", key1:"lulu"}, {book:"rest_client"}, {key:"javascript"}, '.pdf');
+    var good = 'users/123/book/rest_client.pdf?key=javascript&key1=lulu';
+    assert.equal( url, good, "Combo (Has ext)" );
     
     try{
     	rc.buildUrl('users/{id}', null);
@@ -168,4 +168,69 @@ QUnit.test("Compatible Test", function( assert ) {
             rc._compatibleHandler(method, request);
             assert.ok(called, "(Method=" + method + ") When compatible is function, they will be call to build request");
     });
+});
+
+QUnit.test("Send Request Test", function( assert ) {
+	var optionsErrorHandlerCalled = false;
+	var optionsCompleteHandlerCalled = false;
+	var requestErrorHandlerCalled = false;
+	var requestCompleteHandlerCalled = false;
+	var addonErrorHandlerCalled = false;
+	var addonCompleteHandlerCalled = false;
+	
+	function resetMarks() {
+		optionsErrorHandlerCalled = false;
+		optionsCompleteHandlerCalled = false;
+		requestErrorHandlerCalled = false;
+		requestCompleteHandlerCalled = false;
+		addonErrorHandlerCalled = false;
+		addonCompleteHandlerCalled = false;
+	}
+	
+	var rc = new $.RestClient().updateOptions({
+		error: function(message, jqXHR, textStatus, errorThrown){
+			optionsErrorHandlerCalled = true;
+		},
+		complete: function() {
+			optionsCompleteHandlerCalled = true;
+		}
+	});
+	var badRequest = {url:"{noexist}"};
+	
+	rc.sendRequest("GET", badRequest);
+	
+	assert.ok(optionsErrorHandlerCalled, "Call options error handler when request build fault.");
+	assert.ok(optionsCompleteHandlerCalled, "Call options complete handler when request build fault.");
+
+	resetMarks()
+	
+	badRequest = {url:"{noexist}", 
+		error: function(message, jqXHR, textStatus, errorThrown){
+			requestErrorHandlerCalled = true;
+		},
+		complete: function() {
+			requestCompleteHandlerCalled = true;
+		}
+	};
+	
+	rc.sendRequest("GET", badRequest);
+	
+	assert.ok(!optionsErrorHandlerCalled && requestErrorHandlerCalled, "Call request error handler priority when request build fault.");
+	assert.ok(!optionsCompleteHandlerCalled && requestCompleteHandlerCalled, "Call request complete handler priority when request build fault.");
+	
+	resetMarks()
+	
+	rc.sendRequest("GET", badRequest, {
+		error: function(message, jqXHR, textStatus, errorThrown){
+			addonErrorHandlerCalled = true;
+		},
+		complete: function() {
+			addonCompleteHandlerCalled = true;
+		}
+	});
+	
+	assert.ok(!optionsErrorHandlerCalled && !requestErrorHandlerCalled && addonErrorHandlerCalled, "Call addon error handler priority when request build fault.");
+	assert.ok(!optionsCompleteHandlerCalled && !requestCompleteHandlerCalled && addonCompleteHandlerCalled, "Call addon complete handler priority when request build fault.");
+	
+	
 });
