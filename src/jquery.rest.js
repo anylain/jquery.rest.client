@@ -11,10 +11,12 @@
 		var currOptions = null;
 		var _this = this;
 
+		// 获取当前版本
 		this.getVersion = function() {
 			return version;
 		};
 
+		// 替换字符串中的 {key} 内容, 一个简单的小模板引擎
 		var _gsub = function(source, pattern, replacement) {
 			var result = '', match;
 			while (source.length > 0) {
@@ -29,10 +31,12 @@
 			return result;
 		};
 
+		// 克隆对象, 这个方法只能克隆简单对象
 		this._clone = function(obj) {
 			return $.extend(true, {}, obj);
 		}
 
+		// 更新 或者 叠加 options
 		this._updateOptions = function(source, newValue, force) {
 			var result;
 			if (source === undefined) {
@@ -54,6 +58,7 @@
 			return result;
 		};
 
+		// 兼容性处理,当浏览器不支持 HTTP 1.1 进行的一些方法替换方案
 		this._compatibleHandler = function(method, request) {
 			if (!request.compatible) {
 				request.type = method;
@@ -85,20 +90,24 @@
 			}
 		};
 
+		// 更新当前配置
 		this.updateOptions = function(newOptions) {
 			currOptions = this._updateOptions(currOptions, newOptions, true);
 			return this;
 		};
 
+		// 使用新配置替换当前配置
 		this.setOptions = function(newOptions) {
 			currOptions = newOptions;
 			return this;
 		};
 
+		// 获取当前配置
 		this.getOptions = function() {
 			return currOptions;
 		};
 
+		// 构造请求地址
 		this.buildUrl = function(sourceUrl, urlParams, pathParams, queryParams,
 				ext) {
 			pathParams = $.extend(true, {}, urlParams, pathParams);
@@ -134,6 +143,7 @@
 			return result;
 		};
 
+		// 构造queryString
 		this.buildQueryString = function(queryParams) {
 			return $.param(queryParams);
 			/*
@@ -146,6 +156,8 @@
 			 */
 		};
 
+		// 构造请求对象, 该对象可以直接用于$.ajax方法
+		// 该方法在构造失败时会调用$.error抛出异常
 		this.buildRequest = function(method, request, addon) {
 			var result = {};
 
@@ -159,6 +171,7 @@
 			var successHandler = result.success;
 			var errorHandler = result.error;
 
+			// 序列化请求体
 			if (result.serializeRequestBody) {
 				try {
 					result.data = result.serializeRequestBody(result);
@@ -167,6 +180,7 @@
 				}
 			}
 
+			// 请求成功回调包装方法, 会尝试反序列化返回体
 			result.success = function(data, textStatus, jqXHR) {
 				if (result.deserializeResponseBody) {
 					try {
@@ -181,6 +195,7 @@
 					successHandler(data, textStatus, jqXHR);
 			};
 
+			// 请求失败回调包装方法, 会尝试反序列化返回体
 			result.error = function(jqXHR, textStatus, errorThrown) {
 				var message;
 				if (result.deserializeError)
@@ -194,16 +209,19 @@
 					errorHandler(message, jqXHR, textStatus, errorThrown);
 			};
 
+			// 构造请求地址
 			result.url = this.buildUrl(result.url, result.urlParams,
 					result.pathParams, result.queryParams, result.ext);
 			if (result.baseUrl)
 				result.url = result.baseUrl + result.url;
 
+			// 兼容性处理
 			this._compatibleHandler(method, result);
 
 			return result;
 		};
 
+		// 立刻发送一个请求, 该请求会捕获构造期异常, 转而调用请求失败回调方法
 		this.sendRequest = function(method, request, addon) {
 
 			try {
@@ -249,8 +267,10 @@
 
 	};
 
+	// 配置模板容器
 	$.RestClient.options = {};
 
+	// json 默认配置模板
 	$.RestClient.options.json = {
 		baseUrl : null,
 		compatible : null,
@@ -278,6 +298,7 @@
 
 	};
 
+	// xml默认配置模板
 	$.RestClient.options.xml = {
 		dataType : "xml",
 		headers : {
@@ -287,6 +308,7 @@
 		contentType : "application/xml"
 	};
 
+	// 文本类型默认配置模板
 	$.RestClient.options.text = {
 		dataType : "text",
 		headers : {
@@ -294,8 +316,10 @@
 		}
 	};
 
+	// 使用 json 默认配置
 	$.RestClient.options.defaults = $.RestClient.options.json;
 
+	// 初始化默认实例
 	$.rest = new $.RestClient();
 
 })(jQuery);
