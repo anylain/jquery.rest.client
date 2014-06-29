@@ -1,0 +1,28 @@
+{
+    "name": "rest.client",
+    "title": "jQuery REST Client",
+    "description": "A jQuery plugin for quick and convenient access to RESTful apis",
+    "keywords": [
+        "rest",
+        "client",
+        "ajax"
+    ],
+    "version": "2.1.2",
+    "author": {
+        "name": "Pan ying",
+        "email": "anylain@gmail.com",
+        "url": "http://my.oschina.net/anylain"
+    },
+    "licenses": [
+        {
+            "type": "Apache License Version 2.0",
+            "url": "http://www.apache.org/licenses/"
+        }
+    ],
+    "bugs": "https://github.com/anylain/jquery.rest.client/issues",
+    "homepage": "https://github.com/anylain/jquery.rest.client",
+    "docs": "https://github.com/anylain/jquery.rest.client",
+    "dependencies": {
+        "jquery": ">=1.7"
+    }
+}
