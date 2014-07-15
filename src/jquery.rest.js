@@ -20,12 +20,14 @@
 		var _gsub = function(source, pattern, replacement) {
 			var result = '', match;
 			while (source.length > 0) {
-				if (match = source.match(pattern)) {
+				match = source.match(pattern);
+				if (match) {
 					result += source.slice(0, match.index);
 					result += replacement(match).toString();
 					source = source.slice(match.index + match[0].length);
 				} else {
-					result += source, source = '';
+					result += source;
+					source = '';
 				}
 			}
 			return result;
@@ -34,19 +36,23 @@
 		// 克隆对象, 这个方法只能克隆简单对象
 		this._clone = function(obj) {
 			return $.extend(true, {}, obj);
-		}
+		};
 
 		// 更新 或者 叠加 options
 		this._updateOptions = function(source, newValue, force) {
 			var result;
 			if (source === undefined) {
 				result = newValue;
-			} else if (source !== null && $.type(source) == 'object') {
+			} else if (source !== null && $.type(source) === 'object') {
 				result = {};
 				for ( var key in source) {
+					if (!source.hasOwnProperty(key))
+						continue;
 					result[key] = source[key];
 				}
 				for ( var key in newValue) {
+					if (!newValue.hasOwnProperty(key))
+						continue;
 					result[key] = this._updateOptions(source[key],
 							newValue[key], force);
 				}
@@ -86,7 +92,6 @@
 			default:
 				throw new Error('Unsupport rest compatible mode "'
 						+ request.compatible + '"');
-				break;
 			}
 		};
 
@@ -124,21 +129,23 @@
 						return encodeURIComponent(value);
 					});
 
-			if (ext)
+			if (ext) {
 				result += ext;
+			}
 
 			queryParams = queryParams ? this._clone(queryParams) : {};
 			if (urlParams) {
 				$.each(urlParams, function(key, value) {
-					if ($.inArray(key, usedPathParams) == -1
+					if ($.inArray(key, usedPathParams) === -1
 							&& queryParams[key] === undefined) {
 						queryParams[key] = value;
 					}
 				});
 			}
 			var queryString = this.buildQueryString(queryParams);
-			if (queryString)
+			if (queryString) {
 				result += '?' + queryString;
+			}
 
 			return result;
 		};
@@ -146,14 +153,6 @@
 		// 构造queryString
 		this.buildQueryString = function(queryParams) {
 			return $.param(queryParams);
-			/*
-			 * var qsList = []; $.each(queryParams, function(key,value){
-			 * if($.isArray(value)) value = value.join(','); if(value) {
-			 * qsList.push(encodeURIComponent(key) + '=' +
-			 * encodeURIComponent(value)); }else {
-			 * qsList.push(encodeURIComponent(key)); } }); return
-			 * qsList.join('&');
-			 */
 		};
 
 		// 构造请求对象, 该对象可以直接用于$.ajax方法
@@ -163,8 +162,9 @@
 
 			result = this._clone(request);
 
-			if (addon)
+			if (addon) {
 				result = this._updateOptions(result, addon, true);
+			}
 
 			result = this._updateOptions(result, currOptions);
 
@@ -198,22 +198,24 @@
 			// 请求失败回调包装方法, 会尝试反序列化返回体
 			result.error = function(jqXHR, textStatus, errorThrown) {
 				var message;
-				if (result.deserializeError)
+				if (result.deserializeError) {
 					message = result.deserializeError(jqXHR, textStatus,
 							errorThrown, result);
-				else
+				} else {
 					message = (jqXHR && jqXHR.responseText) || errorThrown
 							|| textStatus;
-
-				if (errorHandler)
+				}
+				if (errorHandler) {
 					errorHandler(message, jqXHR, textStatus, errorThrown);
+				}
 			};
 
 			// 构造请求地址
 			result.url = this.buildUrl(result.url, result.urlParams,
 					result.pathParams, result.queryParams, result.ext);
-			if (result.baseUrl)
+			if (result.baseUrl) {
 				result.url = result.baseUrl + result.url;
+			}
 
 			// 兼容性处理
 			this._compatibleHandler(method, result);
