@@ -1,5 +1,5 @@
 ﻿/**
- * JQuery Rest Client Plugin v1.1 https://git.oschina.net/anylain/RestClient
+ * JQuery Rest Client Plugin v1.3 https://git.oschina.net/anylain/RestClient
  * 
  * Copyright 2014 Pan Ying Released under the Apache 2.0 License
  */
@@ -7,7 +7,7 @@
 
 	$.RestClient = function(options) {
 
-		var version = '1.2';
+		var version = '1.3-alpha';
 		var currOptions = null;
 		var _this = this;
 
