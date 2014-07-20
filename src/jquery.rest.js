@@ -8,7 +8,7 @@
 
 	$.RestClient = function(options) {
 
-		var version = '1.3-alpha';
+		var version = '1.3';
 		var currOptions = null;
 		var _this = this;
 
