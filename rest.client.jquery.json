@@ -1,5 +1,5 @@
 {
-    "name": "rest.client",
+    "name": "jquery.rest.client",
     "title": "jQuery REST Client",
     "description": "A jQuery plugin for quick and convenient access to RESTful apis",
     "keywords": [
