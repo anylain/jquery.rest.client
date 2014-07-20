@@ -1,4 +1,5 @@
-﻿/**
+﻿"use strict";
+/**
  * JQuery Rest Client Plugin v1.3 https://git.oschina.net/anylain/RestClient
  * 
  * Copyright 2014 Pan Ying Released under the Apache 2.0 License
